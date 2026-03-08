@@ -1,0 +1,11 @@
+PACKAGE_NAME="linuwu_sense"
+PACKAGE_VERSION="@PACKAGE_VERSION@"
+AUTOINSTALL="yes"
+
+# Quote make so DKMS does not append KERNELRELEASE automatically.
+MAKE[0]="'make' KVER=${kernelver} dkms-build"
+CLEAN="'make' KVER=${kernelver} clean"
+
+BUILT_MODULE_NAME[0]="linuwu_sense"
+BUILT_MODULE_LOCATION[0]="src"
+DEST_MODULE_LOCATION[0]="/kernel/drivers/platform/x86"
