@@ -3056,14 +3056,19 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      
      obj = output.pointer;
  
-       if (!obj || obj->type != ACPI_TYPE_BUFFER || obj->buffer.length != 8) {
-         pr_err("Unexpected output format getting battery health status, buffer "
-                "length:%d\n",
-                obj->buffer.length);
+     if (!obj) {
+         pr_err("Unexpected empty output getting battery health status\n");
          goto failed;
-       }
+     }
+
+     if (obj->type != ACPI_TYPE_BUFFER || obj->buffer.length != 8) {
+         pr_err("Unexpected output format getting battery health status, buffer "
+                "length:%u\n",
+                obj->type == ACPI_TYPE_BUFFER ? obj->buffer.length : 0);
+         goto failed;
+     }
      
-       ret = *((struct get_battery_health_control_status_output *)obj->buffer.pointer);
+     ret = *((struct get_battery_health_control_status_output *)obj->buffer.pointer);
      
      if(mode == HEALTH_MODE){
          *enabled = ret.uFunctionStatus[0];
@@ -3107,14 +3112,19 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      
      obj = output.pointer;
  
-       if (!obj || obj->type != ACPI_TYPE_BUFFER || obj->buffer.length != 4) {
-         pr_err("Unexpected output format getting battery health status, buffer "
-                "length:%d\n",
-                obj->buffer.length);
+     if (!obj) {
+         pr_err("Unexpected empty output getting battery health status\n");
          goto failed;
-       }
+     }
+
+     if (obj->type != ACPI_TYPE_BUFFER || obj->buffer.length != 4) {
+         pr_err("Unexpected output format getting battery health status, buffer "
+                "length:%u\n",
+                obj->type == ACPI_TYPE_BUFFER ? obj->buffer.length : 0);
+         goto failed;
+     }
      
-       ret = *((struct set_battery_health_control_output  *)obj->buffer.pointer);
+     ret = *((struct set_battery_health_control_output  *)obj->buffer.pointer);
      
      if(ret.uReturn != 0 && ret.uReservedOut != 0){
          pr_err("Failed to set battery health status\n");
@@ -3290,15 +3300,17 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
  }
  
  
- static ssize_t predator_fan_speed_store(struct device *dev,
-                                             struct device_attribute *attr,
-                                             const char *buf, size_t count) {
-     int t_cpu_fan_speed, t_gpu_fan_speed;
-     
+static ssize_t predator_fan_speed_store(struct device *dev,
+                                            struct device_attribute *attr,
+                                            const char *buf, size_t count) {
+    int t_cpu_fan_speed, t_gpu_fan_speed;
+    
      char input[9];
      char *token;
      char* input_ptr = input;
      size_t len = min(count, sizeof(input) - 1);
+     if (!len)
+         return -EINVAL;
      strncpy(input, buf, len);
  
      if(input[len-1] == '\n'){
@@ -3320,10 +3332,10 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
          return -EINVAL;
      }
  
-     acpi_status status = acer_set_fan_speed(t_cpu_fan_speed, t_gpu_fan_speed);
-     if(ACPI_FAILURE(status)){
-         return -ENODEV;
-     } 
+    acpi_status status = acer_set_fan_speed(t_cpu_fan_speed, t_gpu_fan_speed);
+    if(ACPI_FAILURE(status)){
+        return -ENODEV;
+    } 
  
      return count;
  }
@@ -3390,16 +3402,16 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      return 0;
  }
  
- static acpi_status acer_predator_state_restore(int value){
-     int err = WMID_gaming_set_misc_setting(ACER_WMID_MISC_SETTING_PLATFORM_PROFILE, 
-                                        value == 0 ? current_states.battery_state.thermal_profile : current_states.ac_state.thermal_profile);
-     if (err)
-         return err;
- 
-     acpi_status status = acer_set_fan_speed(value == 0 ? current_states.battery_state.cpu_fan_speed : current_states.ac_state.cpu_fan_speed, 
-                                 value == 0 ? current_states.battery_state.gpu_fan_speed : current_states.ac_state.gpu_fan_speed);
-     if(ACPI_FAILURE(status)){
-         return AE_ERROR;
+static acpi_status acer_predator_state_restore(int value){
+    int err = WMID_gaming_set_misc_setting(ACER_WMID_MISC_SETTING_PLATFORM_PROFILE, 
+                                       value == 0 ? current_states.battery_state.thermal_profile : current_states.ac_state.thermal_profile);
+    if (err)
+        return err;
+
+    acpi_status status = acer_set_fan_speed(value == 0 ? current_states.battery_state.cpu_fan_speed : current_states.ac_state.cpu_fan_speed, 
+                                value == 0 ? current_states.battery_state.gpu_fan_speed : current_states.ac_state.gpu_fan_speed);
+    if(ACPI_FAILURE(status)){
+        return AE_ERROR;
      } 
  
      return AE_OK;
@@ -3468,7 +3480,7 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      }
  
      file = filp_open(STATE_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-     if(!file) {
+     if (IS_ERR(file)) {
          pr_info("state_access - Error opening file\n");
          return -1;
      }
@@ -3689,14 +3701,19 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      
      obj = output.pointer;
  
-       if (!obj || obj->type != ACPI_TYPE_BUFFER || obj->buffer.length != 16) {
-         pr_err("Unexpected output format getting kb zone status, buffer "
-                "length:%d\n",
-                obj->buffer.length);
+     if (!obj) {
+         pr_err("Unexpected empty output getting kb zone status\n");
          goto failed;
-       }
- 
-       *out = *((struct get_four_zoned_kb_output  *)obj->buffer.pointer);
+     }
+
+     if (obj->type != ACPI_TYPE_BUFFER || obj->buffer.length != 16) {
+         pr_err("Unexpected output format getting kb zone status, buffer "
+                "length:%u\n",
+                obj->type == ACPI_TYPE_BUFFER ? obj->buffer.length : 0);
+         goto failed;
+     }
+
+     *out = *((struct get_four_zoned_kb_output  *)obj->buffer.pointer);
  
      kfree(obj);
      return AE_OK;
@@ -3851,25 +3868,25 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
  
  /* Per Zone Mode */
  
- static acpi_status get_per_zone_color(struct per_zone_color *output) {
-     acpi_status status;
-     u64 *zones[] = { &output->zone1, &output->zone2, &output->zone3, &output->zone4 };
-     u8 zone_ids[] = { 0x1, 0x2, 0x4, 0x8 };
- 
-     for (int i = 0; i < 4; i++) {
-         status = WMI_gaming_execute_u64(ACER_WMID_GET_GAMING_RGB_KB_METHODID, zone_ids[i], zones[i]);
-         if (ACPI_FAILURE(status)) {
-             pr_err("Error getting kb status (zone %d): %s\n", i + 1, acpi_format_exception(status));
+static acpi_status get_per_zone_color(struct per_zone_color *output) {
+    acpi_status status;
+    u64 *zones[] = { &output->zone1, &output->zone2, &output->zone3, &output->zone4 };
+    u8 zone_ids[] = { 0x1, 0x2, 0x4, 0x8 };
+
+    for (int i = 0; i < 4; i++) {
+        status = WMI_gaming_execute_u64(ACER_WMID_GET_GAMING_RGB_KB_METHODID, zone_ids[i], zones[i]);
+        if (ACPI_FAILURE(status)) {
+            pr_err("Error getting kb status (zone %d): %s\n", i + 1, acpi_format_exception(status));
              return status;
          }
          *zones[i] = cpu_to_be64(*zones[i]) >> 32;
-     }
- 
-     /* Fetching Brighness Value */
-     struct get_four_zoned_kb_output out;
-     status = get_kb_status(&out);
-     if (ACPI_FAILURE(status)) {
-         pr_err("get kb status failed!");
+    }
+
+    /* Fetching Brighness Value */
+    struct get_four_zoned_kb_output out;
+    status = get_kb_status(&out);
+    if (ACPI_FAILURE(status)) {
+        pr_err("get kb status failed!");
          return status;
      }
      output->brightness = out.gmOutput[2];
@@ -3879,10 +3896,10 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
  
  
  
- static acpi_status set_per_zone_color(struct per_zone_color *input) {
-     acpi_status status;
-     u64 *zones[] = { &input->zone1, &input->zone2, &input->zone3, &input->zone4 };
-     u8 zone_ids[] = { 0x1, 0x2, 0x4, 0x8 };
+static acpi_status set_per_zone_color(struct per_zone_color *input) {
+    acpi_status status;
+    u64 *zones[] = { &input->zone1, &input->zone2, &input->zone3, &input->zone4 };
+    u8 zone_ids[] = { 0x1, 0x2, 0x4, 0x8 };
  
      status = set_kb_status(0, 0, input->brightness, 0, 0, 0, 0);
      if (ACPI_FAILURE(status)) {
@@ -3890,10 +3907,10 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
          return -ENODEV;
      }
  
-     for (int i = 0; i < 4; i++) {
-         *zones[i] = (cpu_to_be64(*zones[i]) >> 32) | zone_ids[i];
-         status = WMI_gaming_execute_u64(ACER_WMID_SET_GAMING_RGB_KB_METHODID, *zones[i], NULL);
-         if (ACPI_FAILURE(status)) {
+    for (int i = 0; i < 4; i++) {
+        *zones[i] = (cpu_to_be64(*zones[i]) >> 32) | zone_ids[i];
+        status = WMI_gaming_execute_u64(ACER_WMID_SET_GAMING_RGB_KB_METHODID, *zones[i], NULL);
+        if (ACPI_FAILURE(status)) {
              pr_err("Error setting KB color (zone %d): %s\n", i + 1, acpi_format_exception(status));
              return status;
          }
@@ -3915,14 +3932,16 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      return sprintf(buf,"%06llx,%06llx,%06llx,%06llx,%d\n",output.zone1,output.zone2,output.zone3,output.zone4,output.brightness);
  }
  
- static ssize_t per_zoned_rgb_kb_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
-     int i = 0;
-     size_t len;
-     char *token;
+static ssize_t per_zoned_rgb_kb_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
+    int i = 0;
+    size_t len;
+    char *token;
      char str_buf[34];
      struct per_zone_color colors;
      char *input_ptr = str_buf;
      len = min(count, sizeof(str_buf) - 1);
+     if (!len)
+         return -EINVAL;
      strncpy(str_buf, buf, len);
      if(str_buf[len-1] == '\n'){
          str_buf[len-1] = '\0';
@@ -3949,13 +3968,13 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      if (!token || kstrtoint(token, 10, &colors.brightness) || colors.brightness < 0 || colors.brightness > 100) {
          pr_err("Invalid brightness value.\n");
          return -EINVAL;
-     }
- 
-     /* set per zone colors */
-     status = set_per_zone_color(&colors);
-     if(ACPI_FAILURE(status)){
-         pr_err("Error setting RGB KB status.\n");
-         return -ENODEV;
+    }
+
+    /* set per zone colors */
+    acpi_status status = set_per_zone_color(&colors);
+    if(ACPI_FAILURE(status)){
+        pr_err("Error setting RGB KB status.\n");
+        return -ENODEV;
      }
      return count;
  }
@@ -3997,7 +4016,7 @@ static int acer_platform_profile_setup(struct platform_device *pdev)
      four_zone_kb_state_update();
  
      file = filp_open(KB_STATE_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-     if(!file) {
+     if (IS_ERR(file)) {
          pr_err("kb_state_access - Error opening file\n");
          return -1;
      }
