@@ -2321,16 +2321,16 @@ enum acer_wmi_predator_v4_oc {
      .profile_set = acer_predator_v4_platform_profile_set,
  };
  
- static int acer_platform_profile_setup(struct platform_device *pdev)
- {
-     const int max_retries = 10;
-     int delay_ms = 100;
-     if (!quirks->predator_v4 && !quirks->nitro_sense && !quirks->nitro_v4)
-         return 0;
-     for (int attempt = 1; attempt <= max_retries; attempt++) {
-         platform_profile_device = devm_platform_profile_register(
-             &pdev->dev, "acer-wmi", NULL, &acer_predator_v4_platform_profile_ops);
-         if (!IS_ERR(platform_profile_device)) {
+static int acer_platform_profile_setup(struct platform_device *pdev)
+{
+    const int max_retries = 10;
+    int delay_ms = 100;
+    if (!quirks->predator_v4 && !quirks->nitro_sense && !quirks->nitro_v4)
+        return 0;
+    for (int attempt = 1; attempt <= max_retries; attempt++) {
+        platform_profile_device = devm_platform_profile_register(
+            &pdev->dev, "acer-wmi", NULL, &acer_predator_v4_platform_profile_ops);
+        if (!IS_ERR(platform_profile_device)) {
              platform_profile_support = true;
              pr_info("Platform profile registered successfully (attempt %d)\n", attempt);
              return 0;
@@ -2522,7 +2522,7 @@ enum acer_wmi_predator_v4_oc {
      }
  
      if (has_cap(ACER_CAP_THREEG) && wmi_has_guid(WMID_GUID3)) {
-         status = get_u32(&state, ACER_WMID3_GDS_THREEG);
+         status = get_u32(&state, ACER_CAP_THREEG);
          if (ACPI_SUCCESS(status))
              rfkill_set_sw_state(threeg_rfkill, !state);
      }
