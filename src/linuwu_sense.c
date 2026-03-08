@@ -3949,8 +3949,6 @@ static ssize_t per_zoned_rgb_kb_store(struct device *dev, struct device_attribut
          str_buf[len] = '\0';
      }
  
-     acpi_status status;
- 
      /* zone1,zone2,zone3,zone4 */
      
      while ((token = strsep(&input_ptr, ",")) && i < 4) {
@@ -4187,7 +4185,7 @@ static ssize_t per_zoned_rgb_kb_store(struct device *dev, struct device_attribut
          acer_predator_state_save();
      }
      if (has_cap(ACER_CAP_NITRO_SENSE)) {
-        sysfs_remove_group(&device->dev.kobj, &nitro_sense_v4_attr_group);
+        sysfs_remove_group(&device->dev.kobj, &nitro_sense_attr_group);
         acer_predator_state_save();
      }
      if (has_cap(ACER_CAP_NITRO_SENSE_V4)) {
